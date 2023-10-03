@@ -9,12 +9,12 @@ type TimeResponse = {
 const TIMEAPI_URL = 'https://timeapi.io/api'
 
 async function fetchTime(
-  host: string,
+  tenant: string,
   timeZone: string = 'Europe/Berlin',
 ): Promise<TimeResponse> {
   const response = await fetch(`${TIMEAPI_URL}/Time/current/zone?timeZone=${timeZone}`, {
     headers: {
-      'X-Tenant-Host': host,
+      'X-Tenant': tenant,
     },
     next: {
       revalidate: 60,
@@ -30,18 +30,18 @@ async function fetchTime(
 
 export default async function Home({
   params: {
-    host,
+    tenant,
   },
 }: {
   params: {
-    host: string
+    tenant: string
   }
 }) {
-  const now = await fetchTime(host)
+  const now = await fetchTime(tenant)
 
   return (
     <div className="container mx-auto mt-10">
-      <h1>Hello World!</h1>
+      <h1>Hello World! ({tenant})</h1>
       <h2>{`${now.dayOfWeek}, ${now.date} at ${now.hour}:${now.minute}:${now.seconds}`}</h2>
     </div>
   )

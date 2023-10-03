@@ -5,10 +5,11 @@ const nextConfig = {
       beforeFiles: [
         {
           source: '/:path*',
-          destination: '/:host/:path*',
+          destination: '/:tenant/:path*',
           has: [{ 
-            type: 'host', 
-            value: '(?<host>.*)',
+            type: 'header',
+            key: 'x-tenant',
+            value: '(?<tenant>.*)',
           }],
         },
       ],

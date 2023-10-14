@@ -28,6 +28,16 @@ async function fetchTime(
   return response.json()
 }
 
+function pad(value: number): string {
+  return value.toString().padStart(2, '0')
+}
+
+function formatTime(time: TimeResponse): string {
+  const { dayOfWeek, date, hour, minute, seconds } = time
+
+  return `${dayOfWeek}, ${date} at ${pad(hour)}:${pad(minute)}:${pad(seconds)}`
+}
+
 export default async function Home({
   params: {
     tenant,
@@ -37,12 +47,12 @@ export default async function Home({
     tenant: string
   }
 }) {
-  const now = await fetchTime(tenant)
+  const time = await fetchTime(tenant)
 
   return (
     <div className="container mx-auto mt-10">
       <h1>Hello World! ({tenant})</h1>
-      <h2>{`${now.dayOfWeek}, ${now.date} at ${now.hour}:${now.minute}:${now.seconds}`}</h2>
+      <h2>This page was generated on {`${formatTime(time)}`}</h2>
     </div>
   )
 }

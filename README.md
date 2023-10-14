@@ -1,4 +1,25 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Next.js Multi-Tenant Application with ISR (Incremental Site Regeneration)
+
+This GitHub repository demonstrates how to create a multi-tenant application using Next.js with Incremental Site Regeneration (ISR) capabilities. The goal of this project is to enable efficient static page generation for a multi-tenant application, allowing Next.js to serve the static version of a page tailored to the specific tenant based on the host of the incoming request.
+
+
+## The Problem
+
+When building a multi-tenant application, one common challenge is ensuring that pages are statically generated and served to the appropriate tenant based on their unique host. This repository offers two different approaches to address this problem.
+
+* [main](https://github.com/guidr/nextjs-multi-tenant/tree/main): This branch solves the problem by using the request host as a path parameter to distinguish different tenants. The path parameter representing the request host is injected into the URL path using URL rewrites defined in the [next.config.js](https://github.com/guidr/nextjs-multi-tenant/blob/main/next.config.js) configuration file.
+
+* [using-middleware](https://github.com/guidr/nextjs-multi-tenant/tree/using-middleware): In this branch, we utilize a [middleware](https://nextjs.org/docs/app/building-your-application/routing/middleware) approach to translate the request host into a tenant ID and set it as a header on the request. This tenant ID is then used to route the request to the correct tenant-specific page. URL rewrites in the [next.config.js](https://github.com/guidr/nextjs-multi-tenant/blob/using-middleware/next.config.js) file handle the routing.
+
+
+## Features
+
+* **Multi-tenant support with ISR**: Serve static pages specific to each tenant based on the request host.
+
+* **Efficient page regeneration**: Benefit from Next.js ISR to regenerate pages incrementally for improved performance.
+
+* **Flexible routing**: Choose between the path parameter approach or middleware approach for handling multi-tenancy.
+
 
 ## Getting Started
 
@@ -6,31 +27,32 @@ First, run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+To test locally with different domains, you can add entries to your `/etc/hosts` file. For example:
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+```
+##
+# Host Database
+#
+# localhost is used to configure the loopback interface
+# when the system is booting.  Do not change this entry.
+##
+127.0.0.1	    localhost
+255.255.255.255	broadcasthost
+::1             localhost
 
-## Learn More
+# Add these entries to test locally
+127.0.0.1	tenant-a.demo.local
+127.0.0.1	tenant-b.demo.local
+```
 
-To learn more about Next.js, take a look at the following resources:
+Then, you can access the application at [http://tenant-a.demo.local:3000](http://tenant-a.demo.local:3000) and [http://tenant-b.demo.local:3000](http://tenant-b.demo.local:3000).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Contributing
+Contributions to this repository are welcome! If you have improvements, suggestions, or bug fixes, please open an issue or submit a pull request.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+## License
+This project is licensed under the terms of the MIT license

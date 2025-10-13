@@ -1,58 +1,218 @@
-# Next.js Multi-Tenant Application with ISR (Incremental Site Regeneration)
+# Next.js Multi-Tenant Application with ISR
 
-This GitHub repository demonstrates how to create a multi-tenant application using Next.js with Incremental Site Regeneration (ISR) capabilities. The goal of this project is to enable efficient static page generation for a multi-tenant application, allowing Next.js to serve the static version of a page tailored to the specific tenant based on the host of the incoming request.
+A reference implementation demonstrating how to build a secure multi-tenant Next.js application using subdomain-based tenant identification and Incremental Static Regeneration (ISR).
 
+## 🎯 Overview
 
-## The Problem
+This project serves as an example and template for building multi-tenant applications in Next.js where:
+- **Tenant identification** is based on the request subdomain
+- **ISR (Incremental Static Regeneration)** is used for dynamic content with caching
+- **Data isolation** is guaranteed between tenants at the routing level
+- **URL rewriting** keeps tenant identifiers hidden from end users
 
-When building a multi-tenant application, one common challenge is ensuring that pages are statically generated and served to the appropriate tenant based on their unique host. This repository offers two different approaches to address this problem.
+## 🚨 The Problem
 
-* [main](https://github.com/guidr/nextjs-multi-tenant/tree/main): This branch solves the problem by using the request host as a path parameter to distinguish different tenants. The path parameter representing the request host is injected into the URL path using URL rewrites defined in the [next.config.js](https://github.com/guidr/nextjs-multi-tenant/blob/main/next.config.js) configuration file.
+When using ISR in a multi-tenant application with a common route structure, there's a critical issue: **cached pages can leak data between tenants**.
 
-* [using-middleware](https://github.com/guidr/nextjs-multi-tenant/tree/using-middleware): In this branch, we utilize a [middleware](https://nextjs.org/docs/app/building-your-application/routing/middleware) approach to translate the request host into a tenant ID and set it as a header on the request. This tenant ID is then used to route the request to the correct tenant-specific page. URL rewrites in the [next.config.js](https://github.com/guidr/nextjs-multi-tenant/blob/using-middleware/next.config.js) file handle the routing.
+![ISR Multi-Tenant Problem](./Architecting%20Multi-Tenant%20Solutions%20with%20Next.js%20and%20the%20App%20Router.png)
 
+As illustrated above, when multiple tenants share the same route (e.g., `/dinner`), Next.js may serve a cached version of the page to the wrong tenant, causing data leakage.
 
-## Features
+## ✅ The Solution
 
-* **Multi-tenant support with ISR**: Serve static pages specific to each tenant based on the request host.
+This repository demonstrates the solution presented in the talk **[Building Secure Multi-Tenant Apps with Next.js](https://www.youtube.com/watch?v=GWdySmcNKwo)** by [Guilherme Dalla Rosa](https://www.linkedin.com/in/guidr).
 
-* **Efficient page regeneration**: Benefit from Next.js ISR to regenerate pages incrementally for improved performance.
+### Dynamic Route Segment
 
-* **Flexible routing**: Choose between the path parameter approach or middleware approach for handling multi-tenancy.
+All routes are nested under a `[tenant]` dynamic segment in the App Router
 
+```
+src/app/[tenant]/
+├── page.tsx          # Home page
+└── dinner/
+    └── page.tsx      # Dinner page with ISR
+```
 
-## Getting Started
+### Middleware-Based Rewriting
 
-First, run the development server:
+The middleware (`src/middleware.ts`) detects the tenant from the subdomain and rewrites the URL:
+```
+chicken.demo.local/dinner  →  /chicken/dinner (internal)
+fox.demo.local/dinner  →  /fox/dinner (internal)
+```
+
+### Tenant-Scoped Caching
+
+Because each tenant has its own route segment, ISR caches are isolated per tenant, preventing data leakage.
+
+## 📋 Prerequisites
+
+Before running the project, you need to configure local DNS entries to map the example tenant subdomains to localhost.
+
+Edit your hosts file and add the following lines:
+
+```
+127.0.0.1	chicken.demo.local
+127.0.0.1	fox.demo.local
+```
+
+**Hosts file location:**
+- **macOS/Linux**: `/etc/hosts` (requires sudo: `sudo nano /etc/hosts`)
+- **Windows**: `C:\Windows\System32\drivers\etc\hosts` (run editor as Administrator)
+
+## 🚀 Getting Started
+
+### Installation
+
+```bash
+npm install
+```
+
+### Development
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The application will start on port 3000. Access the demo tenants at:
 
-To test locally with different domains, you can add entries to your `/etc/hosts` file. For example:
+- **Chicken Tenant**: http://chicken.demo.local:3000
+- **Fox Tenant**: http://fox.demo.local:3000
+
+### Available Routes
+
+Each tenant has access to:
+- `/` - Home dashboard
+- `/dinner` - Tonight's dinner menu (ISR enabled, 60s revalidation)
+
+### Other Commands
+
+```bash
+# Build for production
+npm run build
+
+# Start production server
+npm start
+```
+
+## 🏗️ Project Structure
 
 ```
-##
-# Host Database
-#
-# localhost is used to configure the loopback interface
-# when the system is booting.  Do not change this entry.
-##
-127.0.0.1	    localhost
-255.255.255.255	broadcasthost
-::1             localhost
-
-# Add these entries to test locally
-127.0.0.1	tenant-a.demo.local
-127.0.0.1	tenant-b.demo.local
+/
+├── src/
+│   ├── middleware.ts              # Tenant detection and URL rewriting
+│   ├── app/
+│   │   ├── [tenant]/              # Tenant-scoped routes
+│   │   │   ├── page.tsx           # Home page (ISR)
+│   │   │   ├── layout.tsx         # Tenant layout
+│   │   │   └── dinner/
+│   │   │       └── page.tsx       # Dinner page (ISR with 60s cache)
+│   │   ├── layout.tsx             # Root layout
+│   │   └── globals.css
+│   ├── components/
+│   │   └── ui/                    # Reusable UI components
+│   ├── data/
+│   │   └── tenants.json           # Tenant configuration
+│   └── lib/
+│       ├── tenant.ts              # Tenant data utilities
+│       └── utils.ts
+├── public/
+│   └── images/                    # Static assets
+└── package.json
 ```
 
-Then, you can access the application at [http://tenant-a.demo.local:3000](http://tenant-a.demo.local:3000) and [http://tenant-b.demo.local:3000](http://tenant-b.demo.local:3000).
+## 🔑 How It Works
 
-## Contributing
-Contributions to this repository are welcome! If you have improvements, suggestions, or bug fixes, please open an issue or submit a pull request.
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Middleware
+    participant Page
+    participant getTenant()
+    participant Cache
 
-## License
-This project is licensed under the terms of the MIT license
+    Browser->>Middleware: GET chicken.demo.local/dinner
+    Middleware->>Middleware: Extract "chicken" from subdomain
+    Middleware->>Page: Rewrite to /chicken/dinner<br/>+ Add x-tenant header
+    Page->>getTenant(): Load tenant configuration
+    getTenant()-->>Page: Return tenant data
+    Page->>Cache: Check cache for /chicken/dinner
+    alt Cache Hit (< 60s)
+        Cache-->>Page: Return cached data
+    else Cache Miss or Stale
+        Page->>Page: Fetch fresh data
+        Page->>Cache: Store with 60s TTL
+    end
+    Page-->>Browser: Render personalized page
+```
+
+### Request Flow
+
+1. **[Middleware](src/middleware.ts)** intercepts the incoming request at `chicken.demo.local/dinner`
+   - Extracts `chicken` from the subdomain using regex pattern matching
+   - Rewrites the URL internally to `/chicken/dinner` (tenant-scoped route)
+   - Adds `x-tenant: chicken` header for debugging purposes
+
+2. **[Page Component](src/app/[tenant]/dinner/page.tsx)** receives the rewritten request
+   - Loads tenant-specific configuration from [`tenants.json`](src/data/tenants.json)
+   - Fetches data with caching enabled using `unstable_cache` (simulating API calls)
+   - Cache is scoped to the tenant route segment, ensuring data isolation
+
+3. **Caching Strategy**
+   - ISR with 60-second revalidation (`revalidate: 60`)
+   - Each tenant gets its own cache entry (e.g., `/chicken/dinner`, `/fox/dinner`)
+   - Stale-While-Revalidate (SWR) serves cached content while refreshing in the background
+
+### Real-World API Integration
+
+In production scenarios with external APIs, you can leverage Next.js native fetch caching:
+
+```typescript
+const response = await fetch(`https://api.example.com/tenant/${tenantId}/dinner`, {
+  next: {
+    revalidate: 60, // Cache for 60 seconds
+  },
+})
+```
+
+This approach provides the same caching benefits with automatic revalidation and SWR support.
+
+## 🛠️ Tech Stack
+
+- [Next.js 15](https://nextjs.org/) with App Router
+- [React 19](https://react.dev/)
+- [Upstash Redis](https://upstash.com/) for data storage
+- [Tailwind 4](https://tailwindcss.com/) for styling
+- [shadcn/ui](https://ui.shadcn.com/) for the design system
+
+## 📝 Adding a New Tenant
+
+1. Edit `src/data/tenants.json`:
+   ```json
+   {
+     "newtenantid": {
+       "emoji": "🦆",
+       "name": "Duck",
+       "status": "Active",
+       "favouriteDish": {
+         "name": "Pizza",
+         "image": "/images/pizza.png"
+       }
+     }
+   }
+   ```
+
+2. Add DNS entry to `/etc/hosts`:
+   ```
+   127.0.0.1	duck.demo.local
+   ```
+
+3. Restart the dev server and access at `http://duck.demo.local:3000`
+
+## 🤝 Contributing
+
+This is a demonstration project. Feel free to fork and adapt it to your needs!
+
+## 📄 License
+
+MIT

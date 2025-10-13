@@ -22,29 +22,28 @@ As illustrated above, when multiple tenants share the same route (e.g., `/dinner
 
 This repository demonstrates the solution presented in the talk **[Building Secure Multi-Tenant Apps with Next.js](https://www.youtube.com/watch?v=GWdySmcNKwo)** by [Guilherme Dalla Rosa](https://www.linkedin.com/in/guidr).
 
-### Architecture
+### Dynamic Route Segment
 
-1. **Dynamic Route Segment**: All routes are nested under a `[tenant]` dynamic segment in the App Router
-   ```
-   src/app/[tenant]/
-   ├── page.tsx          # Home page
-   └── dinner/
-       └── page.tsx      # Dinner page with ISR
-   ```
+All routes are nested under a `[tenant]` dynamic segment in the App Router
 
-2. **Middleware-Based Rewriting**: The middleware (`src/middleware.ts`) detects the tenant from the subdomain and rewrites the URL:
-   ```
-   chicken.demo.local/dinner  →  /chicken/dinner (internal)
-   ```
+```
+src/app/[tenant]/
+├── page.tsx          # Home page
+└── dinner/
+    └── page.tsx      # Dinner page with ISR
+```
 
-3. **Tenant-Scoped Caching**: Because each tenant has its own route segment, ISR caches are isolated per tenant, preventing data leakage.
+### Middleware-Based Rewriting
 
-### Key Features
+The middleware (`src/middleware.ts`) detects the tenant from the subdomain and rewrites the URL:
+```
+chicken.demo.local/dinner  →  /chicken/dinner (internal)
+fox.demo.local/dinner  →  /fox/dinner (internal)
+```
 
-- **Subdomain-based tenant detection** via middleware
-- **Transparent URL rewriting** (tenant segment hidden from users)
-- **ISR with 60-second revalidation** on the dinner page
-- **Stale-While-Revalidate (SWR)** enabled for optimal performance
+### Tenant-Scoped Caching
+
+Because each tenant has its own route segment, ISR caches are isolated per tenant, preventing data leakage.
 
 ## 📋 Prerequisites
 
@@ -192,8 +191,8 @@ This approach provides the same caching benefits with automatic revalidation and
    ```json
    {
      "newtenantid": {
-       "emoji": "🎯",
-       "name": "New Tenant",
+       "emoji": "🦆",
+       "name": "Duck",
        "status": "Active",
        "favouriteDish": {
          "name": "Pizza",
@@ -205,10 +204,10 @@ This approach provides the same caching benefits with automatic revalidation and
 
 2. Add DNS entry to `/etc/hosts`:
    ```
-   127.0.0.1	newtenantid.demo.local
+   127.0.0.1	duck.demo.local
    ```
 
-3. Restart the dev server and access at `http://newtenantid.demo.local:3000`
+3. Restart the dev server and access at `http://duck.demo.local:3000`
 
 ## 🤝 Contributing
 

@@ -1,0 +1,20 @@
+{
+  "chicken": {
+    "emoji": "🐔",
+    "name": "Chicken",
+    "status": "Active",
+    "favouriteDish": {
+      "name": "Corn on the cob",
+      "image": "/images/corn-on-the-cob.png"
+    }
+  },
+  "fox": {
+    "emoji": "🦊",
+    "name": "Fox",
+    "status": "Active",
+    "favouriteDish": {
+      "name": "Chicken Wrap",
+      "image": "/images/chicken-wrap.png"
+    }
+  }
+}

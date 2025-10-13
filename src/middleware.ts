@@ -20,18 +20,20 @@ export function middleware(request: NextRequest) {
 
       return response;
     }
-
-    
-
-    
-
-
-    return NextResponse.json({
-      hostname,
-    });
   }
 
-  // return NextResponse.json({
-  //   headers: request.headers
-  // });
+  return NextResponse.json({
+    error: 'Tenant not found',
+  }, { status: 404 });
 }
+
+export const config = {
+  /**
+   * Define the routes that should be handled by the middleware
+   *
+   * @see https://nextjs.org/docs/app/building-your-application/routing/middleware#matcher
+   */
+  matcher: [
+    '/((?!api|_next/static|images|favicon.ico).*)',
+  ],
+};

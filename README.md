@@ -33,13 +33,15 @@ src/app/[tenant]/
     └── page.tsx      # Dinner page with ISR
 ```
 
-### Middleware-Based Rewriting
+### Proxy-Based Rewriting
 
-The middleware (`src/middleware.ts`) detects the tenant from the subdomain and rewrites the URL:
+The proxy (`src/proxy.ts`) detects the tenant from the subdomain and rewrites the URL:
 ```
-chicken.demo.local/dinner  →  /chicken/dinner (internal)
-fox.demo.local/dinner  →  /fox/dinner (internal)
+chicken.demo.localhost/dinner  →  /chicken/dinner (internal)
+fox.demo.localhost/dinner  →  /fox/dinner (internal)
 ```
+
+> **Note**: In Next.js 16 the `middleware` convention was renamed to `proxy`. See the [migration guide](https://nextjs.org/docs/app/guides/upgrading/version-16#middleware-to-proxy).
 
 ### Tenant-Scoped Caching
 
@@ -47,18 +49,9 @@ Because each tenant has its own route segment, ISR caches are isolated per tenan
 
 ## 📋 Prerequisites
 
-Before running the project, you need to configure local DNS entries to map the example tenant subdomains to localhost.
+No DNS or hosts file configuration is required. All modern browsers automatically resolve any `*.localhost` subdomain to `127.0.0.1`, so `chicken.demo.localhost` and `fox.demo.localhost` work out of the box.
 
-Edit your hosts file and add the following lines:
-
-```
-127.0.0.1	chicken.demo.local
-127.0.0.1	fox.demo.local
-```
-
-**Hosts file location:**
-- **macOS/Linux**: `/etc/hosts` (requires sudo: `sudo nano /etc/hosts`)
-- **Windows**: `C:\Windows\System32\drivers\etc\hosts` (run editor as Administrator)
+The dev server is configured to allow these origins via [`allowedDevOrigins`](https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins) in `next.config.ts`.
 
 ## 🚀 Getting Started
 
@@ -76,8 +69,8 @@ npm run dev
 
 The application will start on port 3000. Access the demo tenants at:
 
-- **Chicken Tenant**: http://chicken.demo.local:3000
-- **Fox Tenant**: http://fox.demo.local:3000
+- **Chicken Tenant**: http://chicken.demo.localhost:3000
+- **Fox Tenant**: http://fox.demo.localhost:3000
 
 ### Available Routes
 
@@ -100,7 +93,7 @@ npm start
 ```
 /
 ├── src/
-│   ├── middleware.ts              # Tenant detection and URL rewriting
+│   ├── proxy.ts                   # Tenant detection and URL rewriting (Next.js 16 convention; pre-16 this was middleware.ts)
 │   ├── app/
 │   │   ├── [tenant]/              # Tenant-scoped routes
 │   │   │   ├── page.tsx           # Home page (ISR)
@@ -126,14 +119,14 @@ npm start
 ```mermaid
 sequenceDiagram
     participant Browser
-    participant Middleware
+    participant Proxy
     participant Page
     participant getTenant()
     participant Cache
 
-    Browser->>Middleware: GET chicken.demo.local/dinner
-    Middleware->>Middleware: Extract "chicken" from subdomain
-    Middleware->>Page: Rewrite to /chicken/dinner<br/>+ Add x-tenant header
+    Browser->>Proxy: GET chicken.demo.localhost/dinner
+    Proxy->>Proxy: Extract "chicken" from subdomain
+    Proxy->>Page: Rewrite to /chicken/dinner<br/>+ Add x-tenant header
     Page->>getTenant(): Load tenant configuration
     getTenant()-->>Page: Return tenant data
     Page->>Cache: Check cache for /chicken/dinner
@@ -148,10 +141,11 @@ sequenceDiagram
 
 ### Request Flow
 
-1. **[Middleware](src/middleware.ts)** intercepts the incoming request at `chicken.demo.local/dinner`
+1. **[Proxy](src/proxy.ts)** intercepts the incoming request at `chicken.demo.localhost/dinner`
    - Extracts `chicken` from the subdomain using regex pattern matching
    - Rewrites the URL internally to `/chicken/dinner` (tenant-scoped route)
    - Adds `x-tenant: chicken` header for debugging purposes
+   - Returns 404 JSON if the host doesn't match the tenant pattern
 
 2. **[Page Component](src/app/[tenant]/dinner/page.tsx)** receives the rewritten request
    - Loads tenant-specific configuration from [`tenants.json`](src/data/tenants.json)
@@ -179,11 +173,12 @@ This approach provides the same caching benefits with automatic revalidation and
 
 ## 🛠️ Tech Stack
 
-- [Next.js 15](https://nextjs.org/) with App Router
-- [React 19](https://react.dev/)
-- [Upstash Redis](https://upstash.com/) for data storage
-- [Tailwind 4](https://tailwindcss.com/) for styling
+- [Next.js 16](https://nextjs.org/) with App Router and Turbopack
+- [React 19.2](https://react.dev/)
+- [TypeScript 6](https://www.typescriptlang.org/)
+- [Tailwind CSS 4](https://tailwindcss.com/) for styling
 - [shadcn/ui](https://ui.shadcn.com/) for the design system
+- [Biome](https://biomejs.dev/) for linting and formatting
 
 ## 📝 Adding a New Tenant
 
@@ -202,12 +197,7 @@ This approach provides the same caching benefits with automatic revalidation and
    }
    ```
 
-2. Add DNS entry to `/etc/hosts`:
-   ```
-   127.0.0.1	duck.demo.local
-   ```
-
-3. Restart the dev server and access at `http://duck.demo.local:3000`
+2. Access the new tenant at `http://duck.demo.localhost:3000` — the `*.demo.localhost` pattern is already whitelisted in `next.config.ts` and resolves automatically in modern browsers, so no hosts file or dev server restart is needed.
 
 ## 🤝 Contributing
 

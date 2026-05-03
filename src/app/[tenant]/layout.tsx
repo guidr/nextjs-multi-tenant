@@ -1,4 +1,4 @@
-import { ThemeSwitcher } from '@/components/theme-switcher';
+import { ThemeSwitcher } from "@/components/theme-switcher";
 
 export default function Layout({ children }: React.PropsWithChildren) {
   return (

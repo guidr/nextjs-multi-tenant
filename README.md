@@ -121,14 +121,14 @@ sequenceDiagram
     participant Browser
     participant Proxy
     participant Page
-    participant getTenant()
+    participant GT as getTenant()
     participant Cache
 
     Browser->>Proxy: GET chicken.demo.localhost/dinner
     Proxy->>Proxy: Extract "chicken" from subdomain
     Proxy->>Page: Rewrite to /chicken/dinner<br/>+ Add x-tenant header
-    Page->>getTenant(): Load tenant configuration
-    getTenant()-->>Page: Return tenant data
+    Page->>GT: Load tenant configuration
+    GT-->>Page: Return tenant data
     Page->>Cache: Check cache for /chicken/dinner
     alt Cache Hit (< 60s)
         Cache-->>Page: Return cached data
